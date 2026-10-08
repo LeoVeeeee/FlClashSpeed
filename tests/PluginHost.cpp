@@ -13,6 +13,7 @@ int wmain(int argc, wchar_t** argv) {
     SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
     HMODULE module = LoadLibraryW(argv[1]);
     if (!module) { std::cout << "LoadLibrary error " << GetLastError() << std::endl; return 3; }
+    std::cout << "CHECK: DLL loaded" << std::endl;
     auto instance = reinterpret_cast<ITMPlugin*(*)()>(GetProcAddress(module, "TMPluginGetInstance"));
     auto shutdown = reinterpret_cast<void(*)()>(GetProcAddress(module, "FlClashSpeedShutdown"));
     try {
@@ -53,6 +54,7 @@ int wmain(int argc, wchar_t** argv) {
         flclash::SaveSettings(roundTripPath, expected);
         if (flclash::LoadSettings(roundTripPath).secret != expected.secret)
             throw std::runtime_error("Atomic replacement did not reload");
+        std::cout << "CHECK: UTF-16, DPAPI and atomic settings completed" << std::endl;
         int seconds = _wtoi(argv[3]);
         if (argc > 4 && std::wstring(argv[4]) == L"--options") {
             plugin->DataRequired();

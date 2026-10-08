@@ -66,10 +66,19 @@ def check(condition, description):
     print(report[-1], flush=True)
 
 def execute(arch, directory, seconds, *arguments):
-    result = subprocess.run([str(root / "build" / arch / "PluginCheck.exe"),
-                             str(root / "dist" / arch / "FlClashSpeedPlugin.dll"),
-                             str(directory), str(seconds), *arguments], capture_output=True, text=True,
-                            encoding="utf-8", timeout=seconds + 10)
+    # Sampling starts after loading/DPAPI checks. Allow cold WOW64 startup
+    # separately; the host's 100 ms refresh/reconnect limit remains unchanged.
+    command = [str(root / "build" / arch / "PluginCheck.exe"),
+               str(root / "dist" / arch / "FlClashSpeedPlugin.dll"),
+               str(directory), str(seconds), *arguments]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True,
+                                encoding="utf-8", timeout=seconds + 30)
+    except subprocess.TimeoutExpired as error:
+        partial = error.stdout or b''
+        if isinstance(partial, bytes): partial = partial.decode('utf-8', errors='replace')
+        (root / 'build' / f'{arch}-timeout.jsonl').write_text(partial, encoding='utf-8')
+        raise AssertionError(f'{arch} test host exceeded {seconds + 30}s; last output: {partial[-1500:]}') from error
     (root / "build" / f"{arch}-stream-test.jsonl").write_text(result.stdout, encoding="utf-8")
     if result.returncode:
         raise AssertionError(f"{arch} host exit {result.returncode}: {result.stderr} {result.stdout[:500]}")
