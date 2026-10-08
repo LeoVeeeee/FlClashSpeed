@@ -1,0 +1,16 @@
+build-tools/
+build/
+dist/
+*.zip
+test-results.txt
+__pycache__/
+build-*/
+*.ini
+*.tmp.*
+config.yaml
+shared_preferences.json
+*.jsonl
+docs/Plugin*.cpp
+docs/PluginInterface*.h
+docs/TrafficMonitor.cpp
+docs/插件开发指南.md
